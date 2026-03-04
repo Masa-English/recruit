@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>採用管理ダッシュボード</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root { --teal: #0d9488; --teal-dark: #0f766e; --coral: #f97316; --gray: #64748b; --border: #e2e8f0; --light: #f8fafc; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Noto Sans JP', sans-serif; background: var(--light); color: #1e293b; padding: 24px; line-height: 1.6; }
+  .container { max-width: 1200px; margin: 0 auto; }
+  .header { background: linear-gradient(135deg, #0f766e 0%, #0d9488 100%); color: #fff; padding: 24px 28px; border-radius: 12px; margin-bottom: 24px; }
+  .header h1 { font-size: 20px; margin-bottom: 4px; }
+  .header p { font-size: 13px; opacity: 0.9; }
+  .header-links { font-size: 13px; margin-top: 12px; opacity: 0.9; }
+  .header-links a { color: #fff; text-decoration: underline; margin-right: 16px; }
+  .sec { background: #fff; border-radius: 12px; padding: 20px 24px; margin-bottom: 20px; border: 1px solid var(--border); }
+  .sec-title { font-size: 16px; font-weight: 700; color: var(--teal-dark); margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid var(--teal); }
+
+  /* サマリーカード */
+  .summary-cards { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 24px; }
+  .summary-card { background: #f0fdfa; border: 1px solid var(--teal); padding: 20px 28px; border-radius: 12px; text-align: center; flex: 1; min-width: 140px; }
+  .summary-card.card-green { background: #f0fdf4; border-color: #16a34a; }
+  .summary-card.card-green .summary-num { color: #16a34a; }
+  .summary-card.card-blue { background: #eff6ff; border-color: #2563eb; }
+  .summary-card.card-blue .summary-num { color: #2563eb; }
+  .summary-card.card-orange { background: #fff7ed; border-color: #ea580c; }
+  .summary-card.card-orange .summary-num { color: #ea580c; }
+  .summary-num { font-size: 32px; font-weight: 700; color: var(--teal); }
+  .summary-label { font-size: 13px; color: var(--gray); margin-top: 4px; }
+
+  /* パイプライン */
+  .pipeline-row { display: flex; align-items: center; margin-bottom: 8px; }
+  .pipeline-label { width: 130px; font-size: 13px; font-weight: 600; text-align: right; padding-right: 12px; flex-shrink: 0; }
+  .pipeline-bar-wrap { flex: 1; }
+  .pipeline-bar { height: 28px; border-radius: 6px; color: #fff; font-size: 13px; font-weight: 600; display: flex; align-items: center; padding-left: 10px; min-width: 32px; transition: width 0.3s; }
+
+  /* ステータスバッジ */
+  .status-badge { display: inline-block; padding: 2px 10px; border-radius: 12px; color: #fff; font-size: 12px; font-weight: 600; margin-right: 4px; white-space: nowrap; }
+
+  /* 期待度バッジ */
+  .exp-badge { display: inline-block; padding: 2px 8px; border-radius: 8px; background: #f1f5f9; color: #475569; font-size: 12px; font-weight: 500; }
+
+  /* 役割テーブル */
+  .role-name { font-weight: 600; }
+
+  /* データテーブル共通 */
+  .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .data-table th { background: #f1f5f9; padding: 10px 12px; text-align: left; font-weight: 600; position: sticky; top: 0; }
+  .data-table td { padding: 10px 12px; border-bottom: 1px solid #f1f5f9; }
+  .data-table tr:hover { background: #f8fafc; }
+  .num { text-align: right; font-weight: 600; }
+
+  /* フィルタ */
+  .filters { display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
+  .filters label { font-size: 13px; font-weight: 600; color: var(--gray); }
+  .filters select { padding: 6px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; font-family: inherit; background: #fff; }
+  .filter-count { font-size: 13px; color: var(--gray); margin-left: auto; }
+
+  /* 応募者リンク */
+  .applicant-link { color: var(--teal); text-decoration: none; font-weight: 500; }
+  .applicant-link:hover { text-decoration: underline; }
+
+  /* 備考 */
+  .note-text { cursor: help; border-bottom: 1px dotted var(--gray); }
+  .note-cell { max-width: 300px; white-space: normal; word-break: break-word; font-size: 12px; }
+
+  /* 面談セクション */
+  .interview-section { border-left: 4px solid #2563eb; }
+
+  /* スクロール */
+  .table-scroll { max-height: 60vh; overflow-y: auto; overflow-x: auto; border: 1px solid var(--border); border-radius: 8px; }
+
+  /* レスポンシブ */
+  @media (max-width: 768px) {
+    body { padding: 12px; }
+    .summary-cards { gap: 8px; }
+    .summary-card { padding: 14px 16px; min-width: 100px; }
+    .summary-num { font-size: 24px; }
+    .pipeline-label { width: 90px; font-size: 12px; }
+    .filters { flex-direction: column; gap: 8px; }
+    .table-scroll { max-height: 50vh; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header class="header">
+    <h1>採用管理ダッシュボード</h1>
+    <p>応募者のステータス・役割別状況を一覧表示</p>
+    <div class="header-links">
+    </div>
+  </header>
+
+  <!-- セクション A: サマリーカード -->
+  
+    <div class="summary-cards">
+      <div class="summary-card">
+        <div class="summary-num">15</div>
+        <div class="summary-label">総応募者数</div>
+      </div>
+      <div class="summary-card card-green">
+        <div class="summary-num">3</div>
+        <div class="summary-label">仮採用</div>
+      </div>
+      <div class="summary-card card-blue">
+        <div class="summary-num">3</div>
+        <div class="summary-label">面談予定</div>
+      </div>
+      <div class="summary-card card-orange">
+        <div class="summary-num">3</div>
+        <div class="summary-label">未対応</div>
+      </div>
+    </div>
+
+  <!-- セクション B: ステータス別パイプライン -->
+  <section class="sec">
+    <h2 class="sec-title">ステータス別パイプライン</h2>
+    <div class="pipeline-row"><span class="pipeline-label">未対応</span><div class="pipeline-bar-wrap"><div class="pipeline-bar" style="width:100.0%;background:#ea580c;">3</div></div></div>
+<div class="pipeline-row"><span class="pipeline-label">外部連絡申請中</span><div class="pipeline-bar-wrap"><div class="pipeline-bar" style="width:66.66666666666666%;background:#ca8a04;">2</div></div></div>
+<div class="pipeline-row"><span class="pipeline-label">面談予定</span><div class="pipeline-bar-wrap"><div class="pipeline-bar" style="width:100.0%;background:#2563eb;">3</div></div></div>
+<div class="pipeline-row"><span class="pipeline-label">仮採用</span><div class="pipeline-bar-wrap"><div class="pipeline-bar" style="width:100.0%;background:#16a34a;">3</div></div></div>
+<div class="pipeline-row"><span class="pipeline-label">不採用</span><div class="pipeline-bar-wrap"><div class="pipeline-bar" style="width:100.0%;background:#94a3b8;">3</div></div></div>
+<div class="pipeline-row"><span class="pipeline-label">離脱</span><div class="pipeline-bar-wrap"><div class="pipeline-bar" style="width:33.33333333333333%;background:#dc2626;">1</div></div></div>
+  </section>
+
+  <!-- セクション C: 役割別の応募状況 -->
+  <section class="sec">
+    <h2 class="sec-title">役割別の応募状況</h2>
+    <table class="data-table">
+      <thead><tr><th>役割</th><th>応募者数</th><th>ステータス分布</th></tr></thead>
+      <tbody>
+        <tr><td class="role-name">英会話講師</td><td class="num">6</td><td><span class="status-badge" style="background:#94a3b8;">不採用 1</span><span class="status-badge" style="background:#16a34a;">仮採用 2</span><span class="status-badge" style="background:#ca8a04;">外部連絡申請中 2</span><span class="status-badge" style="background:#2563eb;">面談予定 1</span></td></tr>
+<tr><td class="role-name">事務</td><td class="num">4</td><td><span class="status-badge" style="background:#94a3b8;">不採用 1</span><span class="status-badge" style="background:#16a34a;">仮採用 1</span><span class="status-badge" style="background:#ea580c;">未対応 1</span><span class="status-badge" style="background:#2563eb;">面談予定 1</span></td></tr>
+<tr><td class="role-name">AM</td><td class="num">3</td><td><span class="status-badge" style="background:#ea580c;">未対応 1</span><span class="status-badge" style="background:#dc2626;">離脱 1</span><span class="status-badge" style="background:#2563eb;">面談予定 1</span></td></tr>
+<tr><td class="role-name">編集者</td><td class="num">2</td><td><span class="status-badge" style="background:#94a3b8;">不採用 1</span><span class="status-badge" style="background:#ea580c;">未対応 1</span></td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- セクション D: 応募者一覧テーブル -->
+  <section class="sec">
+    <h2 class="sec-title">応募者一覧</h2>
+    <div class="filters">
+      <label>役割</label>
+      <select id="filter-role" onchange="applyFilters()">
+        <option value="">すべて</option>
+        <option value="AM">AM</option><option value="事務">事務</option><option value="編集者">編集者</option><option value="英会話講師">英会話講師</option>
+      </select>
+      <label>ステータス</label>
+      <select id="filter-status" onchange="applyFilters()">
+        <option value="">すべて</option>
+        <option value="不採用">不採用</option><option value="仮採用">仮採用</option><option value="外部連絡申請中">外部連絡申請中</option><option value="未対応">未対応</option><option value="離脱">離脱</option><option value="面談予定">面談予定</option>
+      </select>
+      <label>期待度</label>
+      <select id="filter-exp" onchange="applyFilters()">
+        <option value="">すべて</option>
+        <option value="まずは面談したい">まずは面談したい</option><option value="中">中</option><option value="即採用したい">即採用したい</option><option value="大">大</option><option value="小">小</option>
+      </select>
+      <span class="filter-count" id="filter-count">15件表示</span>
+    </div>
+    <div class="table-scroll">
+      <table class="data-table" id="applicant-table">
+        <thead><tr><th>名前</th><th>役割</th><th>期待度</th><th>ステータス</th><th>備考</th><th>面談日</th></tr></thead>
+        <tbody>
+          <tr data-role="英会話講師" data-status="仮採用" data-exp="即採用したい"><td><a href="https://crowdworks.jp/reply/1001" target="_blank" class="applicant-link">山田太郎</a></td><td>英会話講師</td><td><span class="exp-badge">即採用したい</span></td><td><span class="status-badge" style="background:#16a34a;">仮採用</span></td><td><span class="note-text" title="TOEIC950点。海外在住経験あり。">TOEIC950点。海外在住経験あり。</span></td><td>2026-02-20</td></tr>
+<tr data-role="事務" data-status="面談予定" data-exp="大"><td><a href="https://crowdworks.jp/reply/1002" target="_blank" class="applicant-link">佐藤花子</a></td><td>事務</td><td><span class="exp-badge">大</span></td><td><span class="status-badge" style="background:#2563eb;">面談予定</span></td><td><span class="note-text" title="事務経験5年。Excel得意。">事務経験5年。Excel得意。</span></td><td>2026-03-10</td></tr>
+<tr data-role="英会話講師" data-status="外部連絡申請中" data-exp="中"><td><a href="https://crowdworks.jp/reply/1003" target="_blank" class="applicant-link">田中一郎</a></td><td>英会話講師</td><td><span class="exp-badge">中</span></td><td><span class="status-badge" style="background:#ca8a04;">外部連絡申請中</span></td><td><span class="note-text" title="英語教育経験3年。">英語教育経験3年。</span></td><td></td></tr>
+<tr data-role="AM" data-status="面談予定" data-exp="大"><td><a href="https://crowdworks.jp/reply/1004" target="_blank" class="applicant-link">鈴木美咲</a></td><td>AM</td><td><span class="exp-badge">大</span></td><td><span class="status-badge" style="background:#2563eb;">面談予定</span></td><td><span class="note-text" title="マネジメント経験豊富。前職はIT企業。">マネジメント経験豊富。前職はIT企業。</span></td><td>2026-03-12</td></tr>
+<tr data-role="編集者" data-status="不採用" data-exp="小"><td><a href="https://crowdworks.jp/reply/1005" target="_blank" class="applicant-link">高橋健太</a></td><td>編集者</td><td><span class="exp-badge">小</span></td><td><span class="status-badge" style="background:#94a3b8;">不採用</span></td><td><span class="note-text" title="経験不足。">経験不足。</span></td><td></td></tr>
+<tr data-role="英会話講師" data-status="面談予定" data-exp="まずは面談したい"><td><a href="https://crowdworks.jp/reply/1006" target="_blank" class="applicant-link">伊藤さくら</a></td><td>英会話講師</td><td><span class="exp-badge">まずは面談したい</span></td><td><span class="status-badge" style="background:#2563eb;">面談予定</span></td><td><span class="note-text" title="留学経験あり。熱意が高い。">留学経験あり。熱意が高い。</span></td><td>2026-03-15</td></tr>
+<tr data-role="事務" data-status="未対応" data-exp="中"><td><a href="https://crowdworks.jp/reply/1007" target="_blank" class="applicant-link">渡辺裕子</a></td><td>事務</td><td><span class="exp-badge">中</span></td><td><span class="status-badge" style="background:#ea580c;">未対応</span></td><td><span class="note-text" title="簿記2級保有。">簿記2級保有。</span></td><td></td></tr>
+<tr data-role="英会話講師" data-status="仮採用" data-exp="大"><td><a href="https://crowdworks.jp/reply/1008" target="_blank" class="applicant-link">中村大輔</a></td><td>英会話講師</td><td><span class="exp-badge">大</span></td><td><span class="status-badge" style="background:#16a34a;">仮採用</span></td><td><span class="note-text" title="ネイティブレベル。指導経験10年以上。長文の備考テスト：この方は非常に優秀で、過去に大手英会話スクールで10年以上の指導経験があります。特にビジネス英語の指導が得意で、企業研修の講師としても活躍されていました。面談時の印象も非常に良く、すぐにでも採用したい人材です。">ネイティブレベル。指導経験10年以上。長文の備考テスト：この...</span></td><td>2026-02-25</td></tr>
+<tr data-role="事務" data-status="不採用" data-exp="小"><td><a href="https://crowdworks.jp/reply/1009" target="_blank" class="applicant-link">小林洋子</a></td><td>事務</td><td><span class="exp-badge">小</span></td><td><span class="status-badge" style="background:#94a3b8;">不採用</span></td><td><span class="note-text" title="応募条件と合わず。">応募条件と合わず。</span></td><td></td></tr>
+<tr data-role="AM" data-status="離脱" data-exp="中"><td><a href="https://crowdworks.jp/reply/1010" target="_blank" class="applicant-link">加藤雅人</a></td><td>AM</td><td><span class="exp-badge">中</span></td><td><span class="status-badge" style="background:#dc2626;">離脱</span></td><td><span class="note-text" title="辞退の連絡あり。">辞退の連絡あり。</span></td><td></td></tr>
+<tr data-role="英会話講師" data-status="外部連絡申請中" data-exp="大"><td><a href="https://crowdworks.jp/reply/1011" target="_blank" class="applicant-link">吉田恵美</a></td><td>英会話講師</td><td><span class="exp-badge">大</span></td><td><span class="status-badge" style="background:#ca8a04;">外部連絡申請中</span></td><td><span class="note-text" title="英検1級保有。子供向け英語教育に興味。">英検1級保有。子供向け英語教育に興味。</span></td><td></td></tr>
+<tr data-role="編集者" data-status="未対応" data-exp="まずは面談したい"><td><a href="https://crowdworks.jp/reply/1012" target="_blank" class="applicant-link">山本陽子</a></td><td>編集者</td><td><span class="exp-badge">まずは面談したい</span></td><td><span class="status-badge" style="background:#ea580c;">未対応</span></td><td><span class="note-text" title="出版社での編集経験3年。">出版社での編集経験3年。</span></td><td></td></tr>
+<tr data-role="英会話講師" data-status="不採用" data-exp="中"><td><a href="https://crowdworks.jp/reply/1013" target="_blank" class="applicant-link">松本翔太</a></td><td>英会話講師</td><td><span class="exp-badge">中</span></td><td><span class="status-badge" style="background:#94a3b8;">不採用</span></td><td><span class="note-text" title="スケジュールが合わず。">スケジュールが合わず。</span></td><td></td></tr>
+<tr data-role="事務" data-status="仮採用" data-exp="大"><td><a href="https://crowdworks.jp/reply/1014" target="_blank" class="applicant-link">井上真理</a></td><td>事務</td><td><span class="exp-badge">大</span></td><td><span class="status-badge" style="background:#16a34a;">仮採用</span></td><td><span class="note-text" title="前職で採用事務経験あり。即戦力。">前職で採用事務経験あり。即戦力。</span></td><td>2026-03-01</td></tr>
+<tr data-role="AM" data-status="未対応" data-exp="小"><td><a href="https://crowdworks.jp/reply/1015" target="_blank" class="applicant-link">木村健二</a></td><td>AM</td><td><span class="exp-badge">小</span></td><td><span class="status-badge" style="background:#ea580c;">未対応</span></td><td><span class="note-text" title="応募動機が不明確。">応募動機が不明確。</span></td><td></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- セクション E: 面談予定リスト -->
+  <section class="sec interview-section">
+    <h2 class="sec-title">面談予定リスト</h2>
+    <table class="data-table">
+      <thead><tr><th>面談日</th><th>名前</th><th>役割</th><th>期待度</th><th>備考</th></tr></thead>
+      <tbody>
+        <tr><td>2026-03-10</td><td>佐藤花子</td><td>事務</td><td>大</td><td class="note-cell">事務経験5年。Excel得意。</td></tr>
+<tr><td>2026-03-12</td><td>鈴木美咲</td><td>AM</td><td>大</td><td class="note-cell">マネジメント経験豊富。前職はIT企業。</td></tr>
+<tr><td>2026-03-15</td><td>伊藤さくら</td><td>英会話講師</td><td>まずは面談したい</td><td class="note-cell">留学経験あり。熱意が高い。</td></tr>
+      </tbody>
+    </table>
+  </section>
+</div>
+
+<script>
+  window.RECRUITMENT_DATA = [{"name": "山田太郎", "link": "https://crowdworks.jp/reply/1001", "role": "英会話講師", "expectation": "即採用したい", "status": "仮採用", "note": "TOEIC950点。海外在住経験あり。", "interview_date": "2026-02-20"}, {"name": "佐藤花子", "link": "https://crowdworks.jp/reply/1002", "role": "事務", "expectation": "大", "status": "面談予定", "note": "事務経験5年。Excel得意。", "interview_date": "2026-03-10"}, {"name": "田中一郎", "link": "https://crowdworks.jp/reply/1003", "role": "英会話講師", "expectation": "中", "status": "外部連絡申請中", "note": "英語教育経験3年。", "interview_date": ""}, {"name": "鈴木美咲", "link": "https://crowdworks.jp/reply/1004", "role": "AM", "expectation": "大", "status": "面談予定", "note": "マネジメント経験豊富。前職はIT企業。", "interview_date": "2026-03-12"}, {"name": "高橋健太", "link": "https://crowdworks.jp/reply/1005", "role": "編集者", "expectation": "小", "status": "不採用", "note": "経験不足。", "interview_date": ""}, {"name": "伊藤さくら", "link": "https://crowdworks.jp/reply/1006", "role": "英会話講師", "expectation": "まずは面談したい", "status": "面談予定", "note": "留学経験あり。熱意が高い。", "interview_date": "2026-03-15"}, {"name": "渡辺裕子", "link": "https://crowdworks.jp/reply/1007", "role": "事務", "expectation": "中", "status": "未対応", "note": "簿記2級保有。", "interview_date": ""}, {"name": "中村大輔", "link": "https://crowdworks.jp/reply/1008", "role": "英会話講師", "expectation": "大", "status": "仮採用", "note": "ネイティブレベル。指導経験10年以上。長文の備考テスト：この方は非常に優秀で、過去に大手英会話スクールで10年以上の指導経験があります。特にビジネス英語の指導が得意で、企業研修の講師としても活躍されていました。面談時の印象も非常に良く、すぐにでも採用したい人材です。", "interview_date": "2026-02-25"}, {"name": "小林洋子", "link": "https://crowdworks.jp/reply/1009", "role": "事務", "expectation": "小", "status": "不採用", "note": "応募条件と合わず。", "interview_date": ""}, {"name": "加藤雅人", "link": "https://crowdworks.jp/reply/1010", "role": "AM", "expectation": "中", "status": "離脱", "note": "辞退の連絡あり。", "interview_date": ""}, {"name": "吉田恵美", "link": "https://crowdworks.jp/reply/1011", "role": "英会話講師", "expectation": "大", "status": "外部連絡申請中", "note": "英検1級保有。子供向け英語教育に興味。", "interview_date": ""}, {"name": "山本陽子", "link": "https://crowdworks.jp/reply/1012", "role": "編集者", "expectation": "まずは面談したい", "status": "未対応", "note": "出版社での編集経験3年。", "interview_date": ""}, {"name": "松本翔太", "link": "https://crowdworks.jp/reply/1013", "role": "英会話講師", "expectation": "中", "status": "不採用", "note": "スケジュールが合わず。", "interview_date": ""}, {"name": "井上真理", "link": "https://crowdworks.jp/reply/1014", "role": "事務", "expectation": "大", "status": "仮採用", "note": "前職で採用事務経験あり。即戦力。", "interview_date": "2026-03-01"}, {"name": "木村健二", "link": "https://crowdworks.jp/reply/1015", "role": "AM", "expectation": "小", "status": "未対応", "note": "応募動機が不明確。", "interview_date": ""}];
+
+  function applyFilters() {
+    var role = document.getElementById('filter-role').value;
+    var status = document.getElementById('filter-status').value;
+    var exp = document.getElementById('filter-exp').value;
+    var rows = document.querySelectorAll('#applicant-table tbody tr');
+    var count = 0;
+    rows.forEach(function(tr) {
+      var show = true;
+      if (role && tr.dataset.role !== role) show = false;
+      if (status && tr.dataset.status !== status) show = false;
+      if (exp && tr.dataset.exp !== exp) show = false;
+      tr.style.display = show ? '' : 'none';
+      if (show) count++;
+    });
+    document.getElementById('filter-count').textContent = count + '件表示';
+  }
+</script>
+</body>
+</html>

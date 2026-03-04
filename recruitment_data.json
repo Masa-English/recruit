@@ -1,0 +1,224 @@
+{
+  "rows": [
+    {
+      "name": "山田太郎",
+      "link": "https://crowdworks.jp/reply/1001",
+      "role": "英会話講師",
+      "expectation": "即採用したい",
+      "status": "仮採用",
+      "note": "TOEIC950点。海外在住経験あり。",
+      "interview_date": "2026-02-20"
+    },
+    {
+      "name": "佐藤花子",
+      "link": "https://crowdworks.jp/reply/1002",
+      "role": "事務",
+      "expectation": "大",
+      "status": "面談予定",
+      "note": "事務経験5年。Excel得意。",
+      "interview_date": "2026-03-10"
+    },
+    {
+      "name": "田中一郎",
+      "link": "https://crowdworks.jp/reply/1003",
+      "role": "英会話講師",
+      "expectation": "中",
+      "status": "外部連絡申請中",
+      "note": "英語教育経験3年。",
+      "interview_date": ""
+    },
+    {
+      "name": "鈴木美咲",
+      "link": "https://crowdworks.jp/reply/1004",
+      "role": "AM",
+      "expectation": "大",
+      "status": "面談予定",
+      "note": "マネジメント経験豊富。前職はIT企業。",
+      "interview_date": "2026-03-12"
+    },
+    {
+      "name": "高橋健太",
+      "link": "https://crowdworks.jp/reply/1005",
+      "role": "編集者",
+      "expectation": "小",
+      "status": "不採用",
+      "note": "経験不足。",
+      "interview_date": ""
+    },
+    {
+      "name": "伊藤さくら",
+      "link": "https://crowdworks.jp/reply/1006",
+      "role": "英会話講師",
+      "expectation": "まずは面談したい",
+      "status": "面談予定",
+      "note": "留学経験あり。熱意が高い。",
+      "interview_date": "2026-03-15"
+    },
+    {
+      "name": "渡辺裕子",
+      "link": "https://crowdworks.jp/reply/1007",
+      "role": "事務",
+      "expectation": "中",
+      "status": "未対応",
+      "note": "簿記2級保有。",
+      "interview_date": ""
+    },
+    {
+      "name": "中村大輔",
+      "link": "https://crowdworks.jp/reply/1008",
+      "role": "英会話講師",
+      "expectation": "大",
+      "status": "仮採用",
+      "note": "ネイティブレベル。指導経験10年以上。長文の備考テスト：この方は非常に優秀で、過去に大手英会話スクールで10年以上の指導経験があります。特にビジネス英語の指導が得意で、企業研修の講師としても活躍されていました。面談時の印象も非常に良く、すぐにでも採用したい人材です。",
+      "interview_date": "2026-02-25"
+    },
+    {
+      "name": "小林洋子",
+      "link": "https://crowdworks.jp/reply/1009",
+      "role": "事務",
+      "expectation": "小",
+      "status": "不採用",
+      "note": "応募条件と合わず。",
+      "interview_date": ""
+    },
+    {
+      "name": "加藤雅人",
+      "link": "https://crowdworks.jp/reply/1010",
+      "role": "AM",
+      "expectation": "中",
+      "status": "離脱",
+      "note": "辞退の連絡あり。",
+      "interview_date": ""
+    },
+    {
+      "name": "吉田恵美",
+      "link": "https://crowdworks.jp/reply/1011",
+      "role": "英会話講師",
+      "expectation": "大",
+      "status": "外部連絡申請中",
+      "note": "英検1級保有。子供向け英語教育に興味。",
+      "interview_date": ""
+    },
+    {
+      "name": "山本陽子",
+      "link": "https://crowdworks.jp/reply/1012",
+      "role": "編集者",
+      "expectation": "まずは面談したい",
+      "status": "未対応",
+      "note": "出版社での編集経験3年。",
+      "interview_date": ""
+    },
+    {
+      "name": "松本翔太",
+      "link": "https://crowdworks.jp/reply/1013",
+      "role": "英会話講師",
+      "expectation": "中",
+      "status": "不採用",
+      "note": "スケジュールが合わず。",
+      "interview_date": ""
+    },
+    {
+      "name": "井上真理",
+      "link": "https://crowdworks.jp/reply/1014",
+      "role": "事務",
+      "expectation": "大",
+      "status": "仮採用",
+      "note": "前職で採用事務経験あり。即戦力。",
+      "interview_date": "2026-03-01"
+    },
+    {
+      "name": "木村健二",
+      "link": "https://crowdworks.jp/reply/1015",
+      "role": "AM",
+      "expectation": "小",
+      "status": "未対応",
+      "note": "応募動機が不明確。",
+      "interview_date": ""
+    }
+  ],
+  "aggregation": {
+    "total": 15,
+    "status_counts": {
+      "仮採用": 3,
+      "面談予定": 3,
+      "外部連絡申請中": 2,
+      "不採用": 3,
+      "未対応": 3,
+      "離脱": 1
+    },
+    "role_counts": {
+      "英会話講師": {
+        "total": 6,
+        "statuses": {
+          "仮採用": 2,
+          "外部連絡申請中": 2,
+          "面談予定": 1,
+          "不採用": 1
+        }
+      },
+      "事務": {
+        "total": 4,
+        "statuses": {
+          "面談予定": 1,
+          "未対応": 1,
+          "不採用": 1,
+          "仮採用": 1
+        }
+      },
+      "AM": {
+        "total": 3,
+        "statuses": {
+          "面談予定": 1,
+          "離脱": 1,
+          "未対応": 1
+        }
+      },
+      "編集者": {
+        "total": 2,
+        "statuses": {
+          "不採用": 1,
+          "未対応": 1
+        }
+      }
+    },
+    "expectation_counts": {
+      "即採用したい": 1,
+      "大": 5,
+      "中": 4,
+      "小": 3,
+      "まずは面談したい": 2
+    },
+    "interview_list": [
+      {
+        "name": "佐藤花子",
+        "link": "https://crowdworks.jp/reply/1002",
+        "role": "事務",
+        "expectation": "大",
+        "status": "面談予定",
+        "note": "事務経験5年。Excel得意。",
+        "interview_date": "2026-03-10"
+      },
+      {
+        "name": "鈴木美咲",
+        "link": "https://crowdworks.jp/reply/1004",
+        "role": "AM",
+        "expectation": "大",
+        "status": "面談予定",
+        "note": "マネジメント経験豊富。前職はIT企業。",
+        "interview_date": "2026-03-12"
+      },
+      {
+        "name": "伊藤さくら",
+        "link": "https://crowdworks.jp/reply/1006",
+        "role": "英会話講師",
+        "expectation": "まずは面談したい",
+        "status": "面談予定",
+        "note": "留学経験あり。熱意が高い。",
+        "interview_date": "2026-03-15"
+      }
+    ],
+    "kari_saiyo": 3,
+    "mendan_yotei": 3,
+    "mitaiou": 3
+  }
+}
