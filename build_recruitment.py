@@ -2,12 +2,14 @@
 # -*- coding: utf-8 -*-
 """
 採用管理ダッシュボード — タブベースUI
-CSVをパースし、4タブ構成のHTMLダッシュボードを生成する。
+CSVをパースし、6タブ構成のHTMLダッシュボードを生成する。
 """
 import csv
 import json
 import os
+from datetime import date
 from pathlib import Path
+from statistics import median
 
 BASE = Path(__file__).parent
 
@@ -89,8 +91,152 @@ def load_csv():
                 'status': status,
                 'note': (row.get('備考') or '').strip(),
                 'interview_date': (row.get('面談日') or '').strip(),
+                'date_applied': (row.get('応募日') or '').strip(),
+                'date_hearing': (row.get('ヒアリング日') or '').strip(),
+                'date_interview': (row.get('面談実施日') or '').strip(),
+                'date_trial': (row.get('課題・トライアル日') or '').strip(),
+                'date_hired': (row.get('採用日') or '').strip(),
             })
     return rows
+
+
+# ---------------------------------------------------------------------------
+# WBS / 予実ヘルパー
+# ---------------------------------------------------------------------------
+WBS_STAGES = [
+    ('応募', 'date_applied'),
+    ('ヒアリング', 'date_hearing'),
+    ('面談', 'date_interview'),
+    ('トライアル', 'date_trial'),
+    ('採用', 'date_hired'),
+]
+
+WBS_TRANSITIONS = [
+    ('応募→ヒアリング', 'date_applied', 'date_hearing'),
+    ('ヒアリング→面談', 'date_hearing', 'date_interview'),
+    ('面談→トライアル', 'date_interview', 'date_trial'),
+    ('トライアル→採用', 'date_trial', 'date_hired'),
+]
+
+
+def _parse_date(s):
+    """YYYY-MM-DD を date に変換。無効なら None。"""
+    if not s:
+        return None
+    try:
+        parts = s.split('-')
+        return date(int(parts[0]), int(parts[1]), int(parts[2]))
+    except (ValueError, IndexError):
+        return None
+
+
+def calc_pipeline_stages(rows):
+    """各応募者の最も進んだステージを判定し、ステージ別人数を返す。"""
+    stage_counts = {label: 0 for label, _ in WBS_STAGES}
+    for r in rows:
+        last_stage = None
+        for label, key in WBS_STAGES:
+            if r.get(key):
+                last_stage = label
+        if last_stage:
+            stage_counts[last_stage] += 1
+    return stage_counts
+
+
+def calc_durations(rows):
+    """ステージ間所要日数を計算。"""
+    results = []
+    for label, key_from, key_to in WBS_TRANSITIONS:
+        days_list = []
+        for r in rows:
+            d1 = _parse_date(r.get(key_from, ''))
+            d2 = _parse_date(r.get(key_to, ''))
+            if d1 and d2:
+                diff = (d2 - d1).days
+                if diff >= 0:
+                    days_list.append(diff)
+        if days_list:
+            results.append({
+                'label': label,
+                'avg': round(sum(days_list) / len(days_list), 1),
+                'median': round(median(days_list), 1),
+                'max': max(days_list),
+                'count': len(days_list),
+            })
+        else:
+            results.append({'label': label, 'avg': None, 'median': None, 'max': None, 'count': 0})
+    return results
+
+
+def load_targets():
+    """役割_目標.csv を読み込み。ファイルが無ければ None。"""
+    target_path = BASE / '役割_目標.csv'
+    if not target_path.exists():
+        return None
+    targets = {}
+    with open(target_path, 'r', encoding='utf-8') as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            role = (row.get('役割') or '').strip()
+            try:
+                num = int((row.get('目標人数') or '0').strip())
+            except ValueError:
+                num = 0
+            if role:
+                targets[role] = num
+    return targets
+
+
+def calc_yojitsu(hired_rows, targets):
+    """目標 vs 実績を計算。"""
+    # 実績: 採用済みの役割別人数と名前
+    actual = {}
+    for r in hired_rows:
+        role = r['role'] or '未設定'
+        if role not in actual:
+            actual[role] = {'count': 0, 'names': []}
+        actual[role]['count'] += 1
+        actual[role]['names'].append(r['name'])
+
+    # 役割別データ構築
+    all_roles = set()
+    if targets:
+        all_roles.update(targets.keys())
+    all_roles.update(actual.keys())
+
+    result = []
+    total_target = 0
+    total_actual = 0
+    unset_roles = []  # 目標未設定だが実績がある
+
+    for role in sorted(all_roles):
+        target = targets.get(role, 0) if targets else 0
+        act = actual.get(role, {'count': 0, 'names': []})
+        pct = (act['count'] / target * 100) if target > 0 else (100 if act['count'] > 0 else 0)
+        has_target = targets is not None and role in targets
+        result.append({
+            'role': role,
+            'target': target,
+            'actual': act['count'],
+            'pct': round(pct, 1),
+            'names': act['names'],
+            'has_target': has_target,
+        })
+        if has_target:
+            total_target += target
+        total_actual += act['count']
+
+        if not has_target and act['count'] > 0:
+            unset_roles.append({'role': role, 'count': act['count'], 'names': act['names']})
+
+    return {
+        'items': [i for i in result if i['has_target']],
+        'total_target': total_target,
+        'total_actual': total_actual,
+        'total_pct': round(total_actual / total_target * 100, 1) if total_target > 0 else 0,
+        'unset_roles': unset_roles,
+        'targets_loaded': targets is not None,
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -139,6 +285,31 @@ def aggregate(rows):
     # アクティブ応募者 = 全体 - hidden
     active_count = total - len(hidden_rows)
 
+    # WBS計算
+    pipeline_stages = calc_pipeline_stages(rows)
+    durations = calc_durations(rows)
+
+    # 個別タイムライン: 2つ以上の日付がある応募者
+    timeline_rows = []
+    for r in rows:
+        dates_filled = sum(1 for _, key in WBS_STAGES if r.get(key))
+        if dates_filled >= 2:
+            d_first = None
+            d_last = None
+            for _, key in WBS_STAGES:
+                d = _parse_date(r.get(key, ''))
+                if d:
+                    if d_first is None or d < d_first:
+                        d_first = d
+                    if d_last is None or d > d_last:
+                        d_last = d
+            total_days = (d_last - d_first).days if d_first and d_last else None
+            timeline_rows.append({**r, 'total_days': total_days})
+
+    # 予実計算
+    targets = load_targets()
+    yojitsu = calc_yojitsu(hired_rows, targets)
+
     return {
         'total': total,
         'active_count': active_count,
@@ -154,6 +325,10 @@ def aggregate(rows):
         'saiyo': status_counts.get('採用', 0),
         'kari_saiyo': status_counts.get('仮採用', 0),
         'keiyaku': status_counts.get('契約中', 0),
+        'pipeline_stages': pipeline_stages,
+        'durations': durations,
+        'timeline_rows': timeline_rows,
+        'yojitsu': yojitsu,
     }
 
 
@@ -167,8 +342,12 @@ def render_html(rows, agg):
     tab2 = _render_tab_action(agg)
     # --- タブ3: 採用済み ---
     tab3 = _render_tab_hired(agg)
-    # --- タブ4: 全応募者検索 (JSON埋め込み) ---
-    tab4_html, search_json = _render_tab_search(rows)
+    # --- タブ4: WBS進捗 ---
+    tab4_wbs = _render_tab_wbs(agg)
+    # --- タブ5: 予実管理 ---
+    tab5_yojitsu = _render_tab_yojitsu(agg)
+    # --- タブ6: 全応募者検索 (JSON埋め込み) ---
+    tab6_html, search_json = _render_tab_search(rows)
 
     action_badge = f'<span class="tab-badge">{agg["action_count"]}</span>' if agg['action_count'] > 0 else ''
 
@@ -195,6 +374,8 @@ def render_html(rows, agg):
     <button class="tab-btn active" data-tab="overview">概況</button>
     <button class="tab-btn" data-tab="action">対応が必要{action_badge}</button>
     <button class="tab-btn" data-tab="hired">採用済み</button>
+    <button class="tab-btn" data-tab="wbs">WBS進捗</button>
+    <button class="tab-btn" data-tab="yojitsu">予実管理</button>
     <button class="tab-btn" data-tab="search">全応募者検索</button>
   </nav>
 
@@ -207,8 +388,14 @@ def render_html(rows, agg):
   <div class="tab-content" data-tab="hired">
     {tab3}
   </div>
+  <div class="tab-content" data-tab="wbs">
+    {tab4_wbs}
+  </div>
+  <div class="tab-content" data-tab="yojitsu">
+    {tab5_yojitsu}
+  </div>
   <div class="tab-content" data-tab="search">
-    {tab4_html}
+    {tab6_html}
   </div>
 </div>
 
@@ -450,7 +637,199 @@ def _render_tab_hired(agg):
     return ''.join(sections)
 
 
-# ===== タブ4: 全応募者検索 =====
+# ===== タブ4: WBS進捗 =====
+def _render_tab_wbs(agg):
+    stages = agg['pipeline_stages']
+    durations = agg['durations']
+    timeline_rows = agg['timeline_rows']
+
+    total_with_dates = sum(stages.values())
+
+    if total_with_dates == 0:
+        return '<section class="sec"><p style="color:#94a3b8;text-align:center;padding:40px 0;">WBS日付データがまだ入力されていません</p></section>'
+
+    # --- セクション1: パイプラインファネル ---
+    funnel_bars = []
+    prev_count = None
+    for label, _ in WBS_STAGES:
+        count = stages[label]
+        if count == 0 and prev_count is None:
+            prev_count = 0
+            continue
+        pct_text = ''
+        if prev_count and prev_count > 0:
+            rate = count / prev_count * 100
+            pct_text = f' ({rate:.0f}%)'
+        width_pct = max(count / max(total_with_dates, 1) * 100, 6) if count > 0 else 0
+        funnel_bars.append(
+            f'<div class="pipeline-row">'
+            f'<span class="pipeline-label">{_esc(label)}</span>'
+            f'<div class="pipeline-bar-wrap">'
+            f'<div class="funnel-bar" style="width:{width_pct}%;">{count}{pct_text}</div>'
+            f'</div></div>'
+        )
+        prev_count = count
+
+    funnel_html = f'''
+    <section class="sec">
+      <h2 class="sec-title">パイプラインファネル</h2>
+      <p style="font-size:13px;color:#64748b;margin-bottom:12px;">各ステージの到達人数（最も進んだステージで集計）。括弧内は前ステージからの転換率。</p>
+      {"".join(funnel_bars)}
+    </section>'''
+
+    # --- セクション2: ステージ間所要日数 ---
+    dur_rows = []
+    for d in durations:
+        if d['count'] == 0:
+            dur_rows.append(
+                f'<tr><td>{_esc(d["label"])}</td><td colspan="3" style="color:#94a3b8;">データなし</td><td>0</td></tr>'
+            )
+        else:
+            avg_cls = 'dur-green' if d['avg'] < 5 else ('dur-orange' if d['avg'] < 15 else 'dur-red')
+            med_cls = 'dur-green' if d['median'] < 5 else ('dur-orange' if d['median'] < 15 else 'dur-red')
+            max_cls = 'dur-green' if d['max'] < 5 else ('dur-orange' if d['max'] < 15 else 'dur-red')
+            dur_rows.append(
+                f'<tr><td>{_esc(d["label"])}</td>'
+                f'<td class="{avg_cls}">{d["avg"]}日</td>'
+                f'<td class="{med_cls}">{d["median"]}日</td>'
+                f'<td class="{max_cls}">{d["max"]}日</td>'
+                f'<td>{d["count"]}</td></tr>'
+            )
+
+    dur_html = f'''
+    <section class="sec">
+      <h2 class="sec-title">ステージ間所要日数</h2>
+      <div class="table-scroll">
+        <table class="data-table">
+          <thead><tr><th>遷移</th><th>平均</th><th>中央値</th><th>最大</th><th>件数</th></tr></thead>
+          <tbody>{"".join(dur_rows)}</tbody>
+        </table>
+      </div>
+    </section>'''
+
+    # --- セクション3: 個別タイムライン ---
+    if timeline_rows:
+        tl_rows_html = []
+        for r in timeline_rows:
+            name_cell = f'<a href="{_attr_esc(r["link"])}" target="_blank" class="applicant-link">{_esc(r["name"])}</a>' if r.get('link') else _esc(r['name'])
+            total_d = f'{r["total_days"]}日' if r.get('total_days') is not None else '-'
+            tl_rows_html.append(
+                f'<tr>'
+                f'<td>{name_cell}</td>'
+                f'<td>{_esc(r.get("role", ""))}</td>'
+                f'<td>{_esc(r.get("date_applied", ""))}</td>'
+                f'<td>{_esc(r.get("date_hearing", ""))}</td>'
+                f'<td>{_esc(r.get("date_interview", ""))}</td>'
+                f'<td>{_esc(r.get("date_trial", ""))}</td>'
+                f'<td>{_esc(r.get("date_hired", ""))}</td>'
+                f'<td class="num">{total_d}</td>'
+                f'</tr>'
+            )
+        tl_html = f'''
+        <section class="sec">
+          <h2 class="sec-title">個別タイムライン</h2>
+          <p style="font-size:13px;color:#64748b;margin-bottom:12px;">2つ以上の日付が入力されている応募者を表示</p>
+          <div class="table-scroll">
+            <table class="data-table">
+              <thead><tr><th>名前</th><th>役割</th><th>応募日</th><th>ヒアリング日</th><th>面談実施日</th><th>課題日</th><th>採用日</th><th>合計日数</th></tr></thead>
+              <tbody>{"".join(tl_rows_html)}</tbody>
+            </table>
+          </div>
+        </section>'''
+    else:
+        tl_html = ''
+
+    return funnel_html + dur_html + tl_html
+
+
+# ===== タブ5: 予実管理 =====
+def _render_tab_yojitsu(agg):
+    yj = agg['yojitsu']
+
+    if not yj['targets_loaded']:
+        return '<section class="sec"><p style="color:#94a3b8;text-align:center;padding:40px 0;">役割_目標.csv が未作成です。目標人数を設定してください。</p></section>'
+
+    # --- セクション1: サマリーカード ---
+    pct_color = '#16a34a' if yj['total_pct'] >= 100 else ('#0d9488' if yj['total_pct'] >= 50 else '#f97316')
+    summary = f'''
+    <div class="summary-cards">
+      <div class="summary-card">
+        <div class="summary-num">{yj['total_target']}</div>
+        <div class="summary-label">目標合計</div>
+      </div>
+      <div class="summary-card card-green">
+        <div class="summary-num">{yj['total_actual']}</div>
+        <div class="summary-label">採用実績</div>
+      </div>
+      <div class="summary-card" style="border-color:{pct_color};">
+        <div class="summary-num" style="color:{pct_color};">{yj['total_pct']}%</div>
+        <div class="summary-label">達成率</div>
+      </div>
+    </div>'''
+
+    # --- セクション2: 役割別プログレスバー ---
+    progress_items = []
+    for item in yj['items']:
+        pct = item['pct']
+        if pct >= 100:
+            bar_color = '#16a34a'
+            check = ' ✓'
+        elif pct >= 50:
+            bar_color = '#0d9488'
+            check = ''
+        elif pct >= 25:
+            bar_color = '#f97316'
+            check = ''
+        else:
+            bar_color = '#ef4444'
+            check = ''
+        bar_width = min(pct, 100)
+        names_html = ', '.join(_esc(n) for n in item['names']) if item['names'] else 'なし'
+        detail_id = f'yj-detail-{_attr_esc(item["role"])}'
+        progress_items.append(f'''
+        <div class="progress-item">
+          <div class="progress-header" onclick="toggleYojitsuDetail(this)">
+            <span class="progress-role">{_esc(item['role'])}</span>
+            <span class="progress-nums">{item['actual']} / {item['target']}{check}</span>
+          </div>
+          <div class="progress-bar-wrap">
+            <div class="progress-bar" style="width:{bar_width}%;background:{bar_color};"></div>
+            <span class="progress-pct">{pct:.0f}%</span>
+          </div>
+          <div class="progress-detail" style="display:none;">
+            <p class="progress-names">{names_html}</p>
+          </div>
+        </div>''')
+
+    progress_html = f'''
+    <section class="sec">
+      <h2 class="sec-title">役割別 目標 vs 実績</h2>
+      {"".join(progress_items)}
+    </section>'''
+
+    # --- セクション3: 目標未設定の役割 ---
+    unset_html = ''
+    if yj['unset_roles']:
+        unset_items = []
+        for u in yj['unset_roles']:
+            names = ', '.join(_esc(n) for n in u['names'])
+            unset_items.append(f'<tr><td class="role-name">{_esc(u["role"])}</td><td class="num">{u["count"]}</td><td>{names}</td></tr>')
+        unset_html = f'''
+        <section class="sec">
+          <h2 class="sec-title">目標未設定の役割（実績あり）</h2>
+          <p style="font-size:13px;color:#64748b;margin-bottom:12px;">役割_目標.csv に目標が設定されていない役割です。</p>
+          <div class="table-scroll">
+            <table class="data-table">
+              <thead><tr><th>役割</th><th>採用数</th><th>採用者</th></tr></thead>
+              <tbody>{"".join(unset_items)}</tbody>
+            </table>
+          </div>
+        </section>'''
+
+    return summary + progress_html + unset_html
+
+
+# ===== タブ6: 全応募者検索 =====
 def _render_tab_search(rows):
     roles = sorted(set(r['role'] for r in rows if r['role']))
     statuses = sorted(set(r['status'] for r in rows if r['status']))
@@ -612,6 +991,26 @@ def _css():
   .applicant-link { color: var(--teal); text-decoration: none; font-weight: 500; }
   .applicant-link:hover { text-decoration: underline; }
   .note-text { cursor: help; border-bottom: 1px dotted var(--gray); }
+
+  /* WBS ファネルバー */
+  .funnel-bar { height: 32px; border-radius: 6px; color: #fff; font-size: 13px; font-weight: 600; display: flex; align-items: center; padding-left: 10px; min-width: 40px; background: linear-gradient(90deg, #0d9488, #14b8a6); transition: width 0.3s; }
+
+  /* WBS 所要日数 色分け */
+  .dur-green { color: #16a34a; font-weight: 600; }
+  .dur-orange { color: #f97316; font-weight: 600; }
+  .dur-red { color: #ef4444; font-weight: 600; }
+
+  /* 予実 プログレスバー */
+  .progress-item { margin-bottom: 16px; }
+  .progress-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; cursor: pointer; padding: 4px 0; }
+  .progress-header:hover { opacity: 0.8; }
+  .progress-role { font-weight: 600; font-size: 14px; }
+  .progress-nums { font-size: 14px; font-weight: 600; color: var(--gray); }
+  .progress-bar-wrap { position: relative; background: #f1f5f9; border-radius: 8px; height: 24px; overflow: hidden; }
+  .progress-bar { height: 100%; border-radius: 8px; transition: width 0.4s ease; min-width: 0; }
+  .progress-pct { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-size: 12px; font-weight: 600; color: #475569; }
+  .progress-detail { padding: 8px 0 0 0; }
+  .progress-names { font-size: 13px; color: var(--gray); padding: 8px 12px; background: #f8fafc; border-radius: 6px; }
 
   /* レスポンシブ */
   @media (max-width: 768px) {
@@ -807,6 +1206,14 @@ function sortColumn(col) {
     sortAsc = true;
   }
   searchApplicants();
+}
+
+// ==== 予実管理: 詳細トグル ====
+function toggleYojitsuDetail(el) {
+  var detail = el.parentElement.querySelector('.progress-detail');
+  if (detail) {
+    detail.style.display = detail.style.display === 'none' ? 'block' : 'none';
+  }
 }
 '''
 
