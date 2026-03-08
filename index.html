@@ -2620,7 +2620,8 @@ function addWbsGoal() {
   var goals = loadWbsGoals();
   var maxId = 0;
   goals.forEach(function(g) { if (g.id > maxId) maxId = g.id; });
-  goals.push({ id: maxId + 1, role: role, target: target, deadline: deadline });
+  var baseline = countHiredForRole(role);
+  goals.push({ id: maxId + 1, role: role, target: target, deadline: deadline, baseline: baseline });
   saveWbsGoals(goals);
 
   roleInput.value = '';
@@ -2638,7 +2639,9 @@ function renderWbsGoals() {
   var rowsHtml = '';
   for (var i = 0; i < goals.length; i++) {
     var g = goals[i];
-    var hired = countHiredForRole(g.role);
+    var totalHired = countHiredForRole(g.role);
+    var baseline = g.baseline || 0;
+    var hired = Math.max(0, totalHired - baseline);
     var pct = g.target > 0 ? Math.min(Math.round((hired / g.target) * 100), 100) : 0;
     var status = getGoalStatus(g, hired);
     var daysLeft = getRemainingDays(g.deadline);
@@ -2690,7 +2693,7 @@ function renderWbsGoals() {
   var totalNeededApps = 0;
   for (var j = 0; j < goals.length; j++) {
     var gj = goals[j];
-    var hj = countHiredForRole(gj.role);
+    var hj = Math.max(0, countHiredForRole(gj.role) - (gj.baseline || 0));
     var remj = Math.max(0, gj.target - hj);
     if (remj > 0) {
       var sj = getRoleStats(gj.role);
