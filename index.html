@@ -118,6 +118,27 @@
   .dur-orange { color: #f97316; font-weight: 600; }
   .dur-red { color: #ef4444; font-weight: 600; }
 
+  /* WBS 編集テーブル */
+  .wbs-filters { display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
+  .wbs-filters label { font-size: 13px; font-weight: 600; color: var(--gray); }
+  .wbs-filters select, .wbs-filters input { padding: 6px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; font-family: inherit; background: #fff; }
+  .wbs-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .wbs-table th { background: #f1f5f9; padding: 10px 12px; text-align: left; font-weight: 600; position: sticky; top: 0; white-space: nowrap; z-index: 1; }
+  .wbs-table td { padding: 6px 8px; border-bottom: 1px solid #f1f5f9; }
+  .wbs-table tr:hover { background: #f0fdfa; }
+  .wbs-table input[type="date"] { border: 1px solid var(--border); border-radius: 6px; padding: 4px 8px; font-size: 12px; font-family: inherit; background: #fff; cursor: pointer; width: 130px; }
+  .wbs-table input[type="date"]:focus { border-color: var(--teal); box-shadow: 0 0 0 2px rgba(13,148,136,0.15); outline: none; }
+  .wbs-table input[type="date"].has-value { background: #f0fdf4; border-color: #86efac; }
+  .wbs-save-toast { position: fixed; bottom: 24px; right: 24px; background: #0f766e; color: #fff; padding: 12px 24px; border-radius: 10px; font-size: 14px; font-weight: 600; z-index: 9999; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+  .wbs-save-toast.show { opacity: 1; }
+  .wbs-stats { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
+  .wbs-stat { background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 10px 16px; text-align: center; min-width: 100px; }
+  .wbs-stat-num { font-size: 20px; font-weight: 700; color: var(--teal); }
+  .wbs-stat-label { font-size: 12px; color: var(--gray); }
+  .wbs-days { font-size: 12px; font-weight: 600; white-space: nowrap; }
+  .wbs-count { font-size: 13px; color: var(--gray); margin-left: auto; }
+  .wbs-pagination { display: flex; justify-content: center; gap: 4px; margin-top: 12px; }
+
   /* 予実 プログレスバー */
   .progress-item { margin-bottom: 16px; }
   .progress-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; cursor: pointer; padding: 4px 0; }
@@ -2099,7 +2120,42 @@ TOEIC810、講師経験7か月、全曜日勤務可(8:00...</span></td></tr></tb
         </section>
   </div>
   <div class="tab-content" data-tab="wbs">
-    <section class="sec"><p style="color:#94a3b8;text-align:center;padding:40px 0;">WBS日付データがまだ入力されていません</p></section>
+    <section class="sec">
+      <h2 class="sec-title">WBS進捗管理</h2>
+      <div class="wbs-stats" id="wbs-stats"></div>
+      <div class="wbs-filters">
+        <label>名前検索</label>
+        <input type="text" id="wbs-search-name" placeholder="名前で検索..." oninput="renderWbs()">
+        <label>役割</label>
+        <select id="wbs-filter-role" onchange="renderWbs()"><option value="">すべて</option></select>
+        <label>ステータス</label>
+        <select id="wbs-filter-status" onchange="renderWbs()">
+          <option value="">すべて</option>
+          <option value="active" selected>アクティブのみ</option>
+        </select>
+        <span class="wbs-count" id="wbs-count"></span>
+      </div>
+      <div class="table-scroll">
+        <table class="wbs-table" id="wbs-table">
+          <thead>
+            <tr>
+              <th>名前</th>
+              <th>役割</th>
+              <th>ステータス</th>
+              <th>応募日</th>
+              <th>ヒアリング日</th>
+              <th>面接日</th>
+              <th>トライアル日</th>
+              <th>採用日</th>
+              <th>所要日数</th>
+            </tr>
+          </thead>
+          <tbody id="wbs-tbody"></tbody>
+        </table>
+      </div>
+      <div class="wbs-pagination" id="wbs-pagination"></div>
+    </section>
+    <div class="wbs-save-toast" id="wbs-toast">保存しました</div>
   </div>
   <div class="tab-content" data-tab="yojitsu">
     
@@ -2414,6 +2470,168 @@ function toggleYojitsuDetail(el) {
     detail.style.display = detail.style.display === 'none' ? 'block' : 'none';
   }
 }
+
+// ==== WBS 編集機能 ====
+var WBS_PAGE_SIZE = 50;
+var wbsPage = 1;
+var wbsFiltered = [];
+var INACTIVE = ['不採用', '離脱', '採用基準✖', '返信なし'];
+var WBS_DATE_FIELDS = ['date_applied', 'date_hearing', 'date_interview', 'date_trial', 'date_hired'];
+var WBS_STORAGE_KEY = 'recruit_wbs_dates';
+
+function loadWbsDates() {
+  try {
+    var saved = localStorage.getItem(WBS_STORAGE_KEY);
+    if (!saved) return;
+    var map = JSON.parse(saved);
+    window.SEARCH_DATA.forEach(function(r) {
+      var key = r.name + '|' + r.role;
+      if (map[key]) {
+        WBS_DATE_FIELDS.forEach(function(f) {
+          if (map[key][f]) r[f] = map[key][f];
+        });
+      }
+    });
+  } catch(e) {}
+}
+
+function saveWbsDate(name, role, field, value) {
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(WBS_STORAGE_KEY) || '{}'); } catch(e) {}
+  var key = name + '|' + role;
+  if (!saved[key]) saved[key] = {};
+  saved[key][field] = value;
+  localStorage.setItem(WBS_STORAGE_KEY, JSON.stringify(saved));
+  // データも更新
+  window.SEARCH_DATA.forEach(function(r) {
+    if (r.name === name && r.role === role) r[field] = value;
+  });
+  updateWbsStats();
+  showWbsToast();
+}
+
+function showWbsToast() {
+  var toast = document.getElementById('wbs-toast');
+  toast.classList.add('show');
+  setTimeout(function() { toast.classList.remove('show'); }, 1500);
+}
+
+function calcDays(r) {
+  var start = r.date_applied;
+  var end = r.date_hired || r.date_trial || r.date_interview || r.date_hearing;
+  if (!start || !end) return null;
+  var d1 = new Date(start), d2 = new Date(end);
+  return Math.round((d2 - d1) / 86400000);
+}
+
+function initWbsFilters() {
+  var roles = {};
+  window.SEARCH_DATA.forEach(function(r) { if (r.role) roles[r.role] = true; });
+  var sel = document.getElementById('wbs-filter-role');
+  Object.keys(roles).sort().forEach(function(role) {
+    var opt = document.createElement('option');
+    opt.value = role; opt.textContent = role;
+    sel.appendChild(opt);
+  });
+}
+
+function updateWbsStats() {
+  var total = 0, withApplied = 0, withHired = 0, totalDays = 0, daysCount = 0;
+  window.SEARCH_DATA.forEach(function(r) {
+    if (INACTIVE.indexOf(r.status) >= 0) return;
+    total++;
+    if (r.date_applied) withApplied++;
+    if (r.date_hired) withHired++;
+    var d = calcDays(r);
+    if (d !== null && d >= 0) { totalDays += d; daysCount++; }
+  });
+  var avgDays = daysCount > 0 ? Math.round(totalDays / daysCount) : '-';
+  document.getElementById('wbs-stats').innerHTML =
+    '<div class="wbs-stat"><div class="wbs-stat-num">' + total + '</div><div class="wbs-stat-label">アクティブ応募者</div></div>' +
+    '<div class="wbs-stat"><div class="wbs-stat-num">' + withApplied + '</div><div class="wbs-stat-label">応募日入力済み</div></div>' +
+    '<div class="wbs-stat"><div class="wbs-stat-num">' + withHired + '</div><div class="wbs-stat-label">採用日入力済み</div></div>' +
+    '<div class="wbs-stat"><div class="wbs-stat-num">' + avgDays + '</div><div class="wbs-stat-label">平均所要日数</div></div>';
+}
+
+function renderWbs() {
+  var nameQ = (document.getElementById('wbs-search-name').value || '').toLowerCase();
+  var roleF = document.getElementById('wbs-filter-role').value;
+  var statusF = document.getElementById('wbs-filter-status').value;
+
+  wbsFiltered = window.SEARCH_DATA.filter(function(r) {
+    if (nameQ && (r.name || '').toLowerCase().indexOf(nameQ) === -1) return false;
+    if (roleF && r.role !== roleF) return false;
+    if (statusF === 'active' && INACTIVE.indexOf(r.status) >= 0) return false;
+    if (statusF && statusF !== 'active' && r.status !== statusF) return false;
+    return true;
+  });
+
+  var total = wbsFiltered.length;
+  var totalPages = Math.max(1, Math.ceil(total / WBS_PAGE_SIZE));
+  if (wbsPage > totalPages) wbsPage = totalPages;
+  var start = (wbsPage - 1) * WBS_PAGE_SIZE;
+  var end = Math.min(start + WBS_PAGE_SIZE, total);
+  var pageData = wbsFiltered.slice(start, end);
+
+  var tbody = document.getElementById('wbs-tbody');
+  var html = '';
+  for (var i = 0; i < pageData.length; i++) {
+    var r = pageData[i];
+    var color = STATUS_COLORS[r.status] || '#64748b';
+    var nameCell = r.link
+      ? '<a href="' + escHtml(r.link) + '" target="_blank" class="applicant-link">' + escHtml(r.name) + '</a>'
+      : escHtml(r.name);
+    var days = calcDays(r);
+    var daysStr = '';
+    if (days !== null) {
+      var cls = days <= 7 ? 'dur-green' : (days <= 14 ? 'dur-orange' : 'dur-red');
+      daysStr = '<span class="wbs-days ' + cls + '">' + days + '日</span>';
+    }
+    var dn = escHtml(r.name), dr = escHtml(r.role);
+    html += '<tr>';
+    html += '<td>' + nameCell + '</td>';
+    html += '<td>' + escHtml(r.role) + '</td>';
+    html += '<td><span class="status-badge" style="background:' + color + ';">' + escHtml(r.status || '未設定') + '</span></td>';
+    WBS_DATE_FIELDS.forEach(function(f) {
+      var val = r[f] || '';
+      var hasCls = val ? ' has-value' : '';
+      html += '<td><input type="date" value="' + val + '" class="' + hasCls + '" onchange="saveWbsDate(\'' + dn.replace(/'/g, "\\'") + '\',\'' + dr.replace(/'/g, "\\'") + '\',\'' + f + '\',this.value); this.className=this.value?\'has-value\':\'\'"></td>';
+    });
+    html += '<td>' + daysStr + '</td>';
+    html += '</tr>';
+  }
+  tbody.innerHTML = html;
+  document.getElementById('wbs-count').textContent = total + '件中 ' + (total > 0 ? start + 1 : 0) + '-' + end + '件表示';
+
+  // ページネーション
+  var pagEl = document.getElementById('wbs-pagination');
+  if (totalPages <= 1) { pagEl.innerHTML = ''; return; }
+  var ph = '';
+  ph += '<button class="page-btn" onclick="wbsGoPage(1)" ' + (wbsPage === 1 ? 'disabled' : '') + '>&laquo;</button>';
+  ph += '<button class="page-btn" onclick="wbsGoPage(' + (wbsPage - 1) + ')" ' + (wbsPage === 1 ? 'disabled' : '') + '>&lsaquo;</button>';
+  var sp = Math.max(1, wbsPage - 3), ep = Math.min(totalPages, sp + 6);
+  if (ep - sp < 6) sp = Math.max(1, ep - 6);
+  for (var p = sp; p <= ep; p++) {
+    ph += '<button class="page-btn' + (p === wbsPage ? ' active' : '') + '" onclick="wbsGoPage(' + p + ')">' + p + '</button>';
+  }
+  ph += '<button class="page-btn" onclick="wbsGoPage(' + (wbsPage + 1) + ')" ' + (wbsPage === totalPages ? 'disabled' : '') + '>&rsaquo;</button>';
+  ph += '<button class="page-btn" onclick="wbsGoPage(' + totalPages + ')" ' + (wbsPage === totalPages ? 'disabled' : '') + '>&raquo;</button>';
+  pagEl.innerHTML = ph;
+}
+
+function wbsGoPage(p) {
+  var totalPages = Math.max(1, Math.ceil(wbsFiltered.length / WBS_PAGE_SIZE));
+  if (p < 1 || p > totalPages) return;
+  wbsPage = p;
+  renderWbs();
+  document.getElementById('wbs-table').scrollIntoView({behavior: 'smooth', block: 'start'});
+}
+
+// 初期化
+loadWbsDates();
+initWbsFilters();
+updateWbsStats();
+renderWbs();
 
 </script>
 <script src="https://feedback-widget-inky-one.vercel.app/widget.js?v=2" data-project="recruit" data-host="https://feedback-widget-inky-one.vercel.app"></script>
