@@ -119,6 +119,10 @@
   .wbs-goal-table tr:hover { background: #f0fdfa; }
   .wbs-goal-table .editable-cell { cursor: pointer; padding: 4px 8px; border-radius: 6px; border: 1px solid transparent; transition: border-color 0.2s; min-width: 50px; display: inline-block; }
   .wbs-goal-table .editable-cell:hover { border-color: var(--teal); background: #f0fdfa; }
+  .wbs-tip { position: relative; cursor: help; }
+  .wbs-tip .wbs-tiptext { visibility: hidden; opacity: 0; position: absolute; bottom: 130%; left: 50%; transform: translateX(-50%); background: #1e293b; color: #fff; font-size: 12px; font-weight: 400; padding: 8px 12px; border-radius: 8px; white-space: nowrap; z-index: 100; pointer-events: none; transition: opacity 0.2s; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+  .wbs-tip .wbs-tiptext::after { content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); border: 6px solid transparent; border-top-color: #1e293b; }
+  .wbs-tip:hover .wbs-tiptext { visibility: visible; opacity: 1; }
   .wbs-goal-table input[type="number"], .wbs-goal-table input[type="date"], .wbs-goal-table input[type="text"] { border: 1px solid var(--teal); border-radius: 6px; padding: 4px 8px; font-size: 13px; font-family: inherit; background: #fff; outline: none; box-shadow: 0 0 0 2px rgba(13,148,136,0.15); }
   .wbs-goal-table input[type="number"] { width: 70px; }
   .wbs-goal-table input[type="date"] { width: 140px; }
@@ -2677,14 +2681,14 @@ function renderWbsGoals() {
     rowsHtml += '<td><span class="editable-cell" onclick="startEditCell(' + g.id + ',\'target\',this)">' + g.target + '人</span></td>';
     rowsHtml += '<td style="font-weight:700;color:var(--teal);">' + hired + '人</td>';
     rowsHtml += '<td style="font-weight:700;color:' + (remaining > 0 ? '#ef4444' : '#16a34a') + ';">' + (remaining > 0 ? 'あと' + remaining + '人' : '達成') + '</td>';
-    var rateTooltip = stats.totalApplicants > 0
+    var rateTip = stats.totalApplicants > 0
       ? '過去実績: 応募' + stats.totalApplicants + '名中 ' + stats.hired + '名採用'
       : 'データなし';
-    var neededTooltip = remaining > 0 && stats.hiringRate > 0
-      ? 'あと' + remaining + '名 ÷ 採用率' + (stats.hiringRate * 100).toFixed(1) + '% = 約' + Math.ceil(remaining / stats.hiringRate) + '件の応募が必要'
+    var neededTip = remaining > 0 && stats.hiringRate > 0
+      ? 'あと' + remaining + '名 ÷ 採用率' + (stats.hiringRate * 100).toFixed(1) + '% = 約' + Math.ceil(remaining / stats.hiringRate) + '件'
       : '';
-    rowsHtml += '<td title="' + escHtml(rateTooltip) + '" style="cursor:help;">' + rateText + '</td>';
-    rowsHtml += '<td title="' + escHtml(neededTooltip) + '" style="font-weight:600;color:#6366f1;cursor:help;">' + neededApps + '</td>';
+    rowsHtml += '<td><span class="wbs-tip">' + rateText + '<span class="wbs-tiptext">' + escHtml(rateTip) + '</span></span></td>';
+    rowsHtml += '<td style="font-weight:600;color:#6366f1;"><span class="wbs-tip">' + neededApps + (neededTip ? '<span class="wbs-tiptext">' + escHtml(neededTip) + '</span>' : '') + '</span></td>';
     rowsHtml += '<td><div class="wbs-progress-bar"><div class="wbs-progress-fill ' + status.color + '" style="width:' + Math.max(pct, 8) + '%;">' + pctDisplay + '%</div></div></td>';
     rowsHtml += '<td><span class="editable-cell" onclick="startEditCell(' + g.id + ',\'deadline\',this)">' + g.deadline + '</span></td>';
     rowsHtml += '<td><span class="wbs-remaining ' + daysClass + '">' + daysText + '</span></td>';
