@@ -110,34 +110,42 @@
   .applicant-link:hover { text-decoration: underline; }
   .note-text { cursor: help; border-bottom: 1px dotted var(--gray); }
 
-  /* WBS ファネルバー */
-  .funnel-bar { height: 32px; border-radius: 6px; color: #fff; font-size: 13px; font-weight: 600; display: flex; align-items: center; padding-left: 10px; min-width: 40px; background: linear-gradient(90deg, #0d9488, #14b8a6); transition: width 0.3s; }
-
-  /* WBS 所要日数 色分け */
-  .dur-green { color: #16a34a; font-weight: 600; }
-  .dur-orange { color: #f97316; font-weight: 600; }
-  .dur-red { color: #ef4444; font-weight: 600; }
-
-  /* WBS 編集テーブル */
-  .wbs-filters { display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
-  .wbs-filters label { font-size: 13px; font-weight: 600; color: var(--gray); }
-  .wbs-filters select, .wbs-filters input { padding: 6px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; font-family: inherit; background: #fff; }
-  .wbs-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  .wbs-table th { background: #f1f5f9; padding: 10px 12px; text-align: left; font-weight: 600; position: sticky; top: 0; white-space: nowrap; z-index: 1; }
-  .wbs-table td { padding: 6px 8px; border-bottom: 1px solid #f1f5f9; }
-  .wbs-table tr:hover { background: #f0fdfa; }
-  .wbs-table input[type="date"] { border: 1px solid var(--border); border-radius: 6px; padding: 4px 8px; font-size: 12px; font-family: inherit; background: #fff; cursor: pointer; width: 130px; }
-  .wbs-table input[type="date"]:focus { border-color: var(--teal); box-shadow: 0 0 0 2px rgba(13,148,136,0.15); outline: none; }
-  .wbs-table input[type="date"].has-value { background: #f0fdf4; border-color: #86efac; }
+  /* WBS 採用目標管理 */
   .wbs-save-toast { position: fixed; bottom: 24px; right: 24px; background: #0f766e; color: #fff; padding: 12px 24px; border-radius: 10px; font-size: 14px; font-weight: 600; z-index: 9999; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
   .wbs-save-toast.show { opacity: 1; }
-  .wbs-stats { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
-  .wbs-stat { background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 10px 16px; text-align: center; min-width: 100px; }
-  .wbs-stat-num { font-size: 20px; font-weight: 700; color: var(--teal); }
-  .wbs-stat-label { font-size: 12px; color: var(--gray); }
-  .wbs-days { font-size: 12px; font-weight: 600; white-space: nowrap; }
-  .wbs-count { font-size: 13px; color: var(--gray); margin-left: auto; }
-  .wbs-pagination { display: flex; justify-content: center; gap: 4px; margin-top: 12px; }
+  .wbs-goal-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .wbs-goal-table th { background: #f1f5f9; padding: 10px 12px; text-align: left; font-weight: 600; position: sticky; top: 0; white-space: nowrap; z-index: 1; border-bottom: 2px solid var(--border); }
+  .wbs-goal-table td { padding: 10px 12px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+  .wbs-goal-table tr:hover { background: #f0fdfa; }
+  .wbs-goal-table .editable-cell { cursor: pointer; padding: 4px 8px; border-radius: 6px; border: 1px solid transparent; transition: border-color 0.2s; min-width: 50px; display: inline-block; }
+  .wbs-goal-table .editable-cell:hover { border-color: var(--teal); background: #f0fdfa; }
+  .wbs-goal-table input[type="number"], .wbs-goal-table input[type="date"], .wbs-goal-table input[type="text"] { border: 1px solid var(--teal); border-radius: 6px; padding: 4px 8px; font-size: 13px; font-family: inherit; background: #fff; outline: none; box-shadow: 0 0 0 2px rgba(13,148,136,0.15); }
+  .wbs-goal-table input[type="number"] { width: 70px; }
+  .wbs-goal-table input[type="date"] { width: 140px; }
+  .wbs-goal-table input[type="text"] { width: 120px; }
+  .wbs-progress-bar { background: #e2e8f0; border-radius: 6px; height: 24px; position: relative; overflow: hidden; min-width: 120px; }
+  .wbs-progress-fill { height: 100%; border-radius: 6px; transition: width 0.4s ease; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: #fff; min-width: 30px; }
+  .wbs-progress-fill.green { background: linear-gradient(90deg, #16a34a, #22c55e); }
+  .wbs-progress-fill.orange { background: linear-gradient(90deg, #f97316, #fb923c); }
+  .wbs-progress-fill.red { background: linear-gradient(90deg, #ef4444, #f87171); }
+  .wbs-progress-fill.teal { background: linear-gradient(90deg, #0d9488, #14b8a6); }
+  .wbs-status-badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+  .wbs-status-badge.achieved { background: #dcfce7; color: #16a34a; }
+  .wbs-status-badge.on-track { background: #f0fdf4; color: #16a34a; }
+  .wbs-status-badge.at-risk { background: #fff7ed; color: #f97316; }
+  .wbs-status-badge.behind { background: #fef2f2; color: #ef4444; }
+  .wbs-remaining { font-size: 13px; font-weight: 600; white-space: nowrap; }
+  .wbs-remaining.ok { color: var(--teal); }
+  .wbs-remaining.warn { color: #f97316; }
+  .wbs-remaining.danger { color: #ef4444; }
+  .wbs-remaining.past { color: #ef4444; font-weight: 700; }
+  .wbs-delete-btn { background: none; border: 1px solid #fca5a5; color: #ef4444; border-radius: 6px; padding: 4px 10px; font-size: 12px; font-family: inherit; cursor: pointer; transition: background 0.2s; }
+  .wbs-delete-btn:hover { background: #fef2f2; }
+  .wbs-add-form { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 16px; padding: 16px; background: #f8fafc; border: 1px dashed var(--border); border-radius: 10px; }
+  .wbs-add-form input, .wbs-add-form select { padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; font-family: inherit; background: #fff; }
+  .wbs-add-form input:focus, .wbs-add-form select:focus { border-color: var(--teal); box-shadow: 0 0 0 2px rgba(13,148,136,0.15); outline: none; }
+  .wbs-add-btn { background: var(--teal); color: #fff; border: none; border-radius: 8px; padding: 8px 20px; font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer; transition: background 0.2s; }
+  .wbs-add-btn:hover { background: var(--teal-dark); }
 
   /* 予実 プログレスバー */
   .progress-item { margin-bottom: 16px; }
@@ -2121,39 +2129,32 @@ TOEIC810、講師経験7か月、全曜日勤務可(8:00...</span></td></tr></tb
   </div>
   <div class="tab-content" data-tab="wbs">
     <section class="sec">
-      <h2 class="sec-title">WBS進捗管理</h2>
-      <div class="wbs-stats" id="wbs-stats"></div>
-      <div class="wbs-filters">
-        <label>名前検索</label>
-        <input type="text" id="wbs-search-name" placeholder="名前で検索..." oninput="renderWbs()">
-        <label>役割</label>
-        <select id="wbs-filter-role" onchange="renderWbs()"><option value="">すべて</option></select>
-        <label>ステータス</label>
-        <select id="wbs-filter-status" onchange="renderWbs()">
-          <option value="">すべて</option>
-          <option value="active" selected>アクティブのみ</option>
-        </select>
-        <span class="wbs-count" id="wbs-count"></span>
-      </div>
+      <h2 class="sec-title">採用目標管理 (WBS)</h2>
+      <div class="summary-cards" id="wbs-summary-cards"></div>
       <div class="table-scroll">
-        <table class="wbs-table" id="wbs-table">
+        <table class="wbs-goal-table" id="wbs-goal-table">
           <thead>
             <tr>
-              <th>名前</th>
               <th>役割</th>
+              <th>目標人数</th>
+              <th>採用済み</th>
+              <th>進捗</th>
+              <th>期限</th>
+              <th>残り日数</th>
               <th>ステータス</th>
-              <th>応募日</th>
-              <th>ヒアリング日</th>
-              <th>面接日</th>
-              <th>トライアル日</th>
-              <th>採用日</th>
-              <th>所要日数</th>
+              <th></th>
             </tr>
           </thead>
-          <tbody id="wbs-tbody"></tbody>
+          <tbody id="wbs-goal-tbody"></tbody>
         </table>
       </div>
-      <div class="wbs-pagination" id="wbs-pagination"></div>
+      <div class="wbs-add-form" id="wbs-add-form">
+        <input type="text" id="wbs-new-role" placeholder="役割名" list="wbs-role-list">
+        <datalist id="wbs-role-list"></datalist>
+        <input type="number" id="wbs-new-target" placeholder="目標" min="1" value="1" style="width:80px;">
+        <input type="date" id="wbs-new-deadline">
+        <button class="wbs-add-btn" onclick="addWbsGoal()">+ 目標を追加</button>
+      </div>
     </section>
     <div class="wbs-save-toast" id="wbs-toast">保存しました</div>
   </div>
@@ -2471,42 +2472,26 @@ function toggleYojitsuDetail(el) {
   }
 }
 
-// ==== WBS 編集機能 ====
-var WBS_PAGE_SIZE = 50;
-var wbsPage = 1;
-var wbsFiltered = [];
-var INACTIVE = ['不採用', '離脱', '採用基準✖', '返信なし'];
-var WBS_DATE_FIELDS = ['date_applied', 'date_hearing', 'date_interview', 'date_trial', 'date_hired'];
-var WBS_STORAGE_KEY = 'recruit_wbs_dates';
+// ==== WBS 採用目標管理 ====
+var WBS_GOALS_KEY = 'recruit_wbs_goals';
+var HIRED_STATUSES = ['採用', '仮採用', '契約中', '仮払いお願いします！'];
 
-function loadWbsDates() {
+function loadWbsGoals() {
   try {
-    var saved = localStorage.getItem(WBS_STORAGE_KEY);
-    if (!saved) return;
-    var map = JSON.parse(saved);
-    window.SEARCH_DATA.forEach(function(r) {
-      var key = r.name + '|' + r.role;
-      if (map[key]) {
-        WBS_DATE_FIELDS.forEach(function(f) {
-          if (map[key][f]) r[f] = map[key][f];
-        });
-      }
-    });
+    var saved = localStorage.getItem(WBS_GOALS_KEY);
+    if (saved) return JSON.parse(saved);
   } catch(e) {}
+  // デフォルト目標（予実管理タブと同じ）
+  return [
+    { id: 1, role: 'AM', target: 5, deadline: '2026-06-30' },
+    { id: 2, role: '事務', target: 3, deadline: '2026-06-30' },
+    { id: 3, role: '編集者', target: 2, deadline: '2026-06-30' },
+    { id: 4, role: '英会話講師', target: 20, deadline: '2026-06-30' }
+  ];
 }
 
-function saveWbsDate(name, role, field, value) {
-  var saved = {};
-  try { saved = JSON.parse(localStorage.getItem(WBS_STORAGE_KEY) || '{}'); } catch(e) {}
-  var key = name + '|' + role;
-  if (!saved[key]) saved[key] = {};
-  saved[key][field] = value;
-  localStorage.setItem(WBS_STORAGE_KEY, JSON.stringify(saved));
-  // データも更新
-  window.SEARCH_DATA.forEach(function(r) {
-    if (r.name === name && r.role === role) r[field] = value;
-  });
-  updateWbsStats();
+function saveWbsGoals(goals) {
+  localStorage.setItem(WBS_GOALS_KEY, JSON.stringify(goals));
   showWbsToast();
 }
 
@@ -2516,122 +2501,177 @@ function showWbsToast() {
   setTimeout(function() { toast.classList.remove('show'); }, 1500);
 }
 
-function calcDays(r) {
-  var start = r.date_applied;
-  var end = r.date_hired || r.date_trial || r.date_interview || r.date_hearing;
-  if (!start || !end) return null;
-  var d1 = new Date(start), d2 = new Date(end);
-  return Math.round((d2 - d1) / 86400000);
+function countHiredForRole(roleName) {
+  var count = 0;
+  window.SEARCH_DATA.forEach(function(r) {
+    if (r.role === roleName && HIRED_STATUSES.indexOf(r.status) >= 0) count++;
+  });
+  return count;
 }
 
-function initWbsFilters() {
+function getGoalStatus(goal, hired) {
+  var pct = goal.target > 0 ? (hired / goal.target) * 100 : 0;
+  var today = new Date(); today.setHours(0,0,0,0);
+  var deadline = new Date(goal.deadline); deadline.setHours(0,0,0,0);
+  var daysLeft = Math.ceil((deadline - today) / 86400000);
+
+  if (pct >= 100) return { label: '達成', cls: 'achieved', color: 'green' };
+  if (daysLeft < 0) return { label: '遅延', cls: 'behind', color: 'red' };
+  if (daysLeft < 7) return { label: '遅延', cls: 'behind', color: 'red' };
+  if (daysLeft <= 14 || pct < 50) return { label: '注意', cls: 'at-risk', color: 'orange' };
+  return { label: '順調', cls: 'on-track', color: 'green' };
+}
+
+function getRemainingDays(deadline) {
+  var today = new Date(); today.setHours(0,0,0,0);
+  var dl = new Date(deadline); dl.setHours(0,0,0,0);
+  return Math.ceil((dl - today) / 86400000);
+}
+
+function initWbsRoleList() {
   var roles = {};
   window.SEARCH_DATA.forEach(function(r) { if (r.role) roles[r.role] = true; });
-  var sel = document.getElementById('wbs-filter-role');
+  var dl = document.getElementById('wbs-role-list');
+  dl.innerHTML = '';
   Object.keys(roles).sort().forEach(function(role) {
     var opt = document.createElement('option');
-    opt.value = role; opt.textContent = role;
-    sel.appendChild(opt);
+    opt.value = role;
+    dl.appendChild(opt);
   });
 }
 
-function updateWbsStats() {
-  var total = 0, withApplied = 0, withHired = 0, totalDays = 0, daysCount = 0;
-  window.SEARCH_DATA.forEach(function(r) {
-    if (INACTIVE.indexOf(r.status) >= 0) return;
-    total++;
-    if (r.date_applied) withApplied++;
-    if (r.date_hired) withHired++;
-    var d = calcDays(r);
-    if (d !== null && d >= 0) { totalDays += d; daysCount++; }
-  });
-  var avgDays = daysCount > 0 ? Math.round(totalDays / daysCount) : '-';
-  document.getElementById('wbs-stats').innerHTML =
-    '<div class="wbs-stat"><div class="wbs-stat-num">' + total + '</div><div class="wbs-stat-label">アクティブ応募者</div></div>' +
-    '<div class="wbs-stat"><div class="wbs-stat-num">' + withApplied + '</div><div class="wbs-stat-label">応募日入力済み</div></div>' +
-    '<div class="wbs-stat"><div class="wbs-stat-num">' + withHired + '</div><div class="wbs-stat-label">採用日入力済み</div></div>' +
-    '<div class="wbs-stat"><div class="wbs-stat-num">' + avgDays + '</div><div class="wbs-stat-label">平均所要日数</div></div>';
-}
+function startEditCell(goalId, field, el) {
+  var goals = loadWbsGoals();
+  var goal = null;
+  for (var i = 0; i < goals.length; i++) { if (goals[i].id === goalId) { goal = goals[i]; break; } }
+  if (!goal) return;
 
-function renderWbs() {
-  var nameQ = (document.getElementById('wbs-search-name').value || '').toLowerCase();
-  var roleF = document.getElementById('wbs-filter-role').value;
-  var statusF = document.getElementById('wbs-filter-status').value;
-
-  wbsFiltered = window.SEARCH_DATA.filter(function(r) {
-    if (nameQ && (r.name || '').toLowerCase().indexOf(nameQ) === -1) return false;
-    if (roleF && r.role !== roleF) return false;
-    if (statusF === 'active' && INACTIVE.indexOf(r.status) >= 0) return false;
-    if (statusF && statusF !== 'active' && r.status !== statusF) return false;
-    return true;
-  });
-
-  var total = wbsFiltered.length;
-  var totalPages = Math.max(1, Math.ceil(total / WBS_PAGE_SIZE));
-  if (wbsPage > totalPages) wbsPage = totalPages;
-  var start = (wbsPage - 1) * WBS_PAGE_SIZE;
-  var end = Math.min(start + WBS_PAGE_SIZE, total);
-  var pageData = wbsFiltered.slice(start, end);
-
-  var tbody = document.getElementById('wbs-tbody');
-  var html = '';
-  for (var i = 0; i < pageData.length; i++) {
-    var r = pageData[i];
-    var color = STATUS_COLORS[r.status] || '#64748b';
-    var nameCell = r.link
-      ? '<a href="' + escHtml(r.link) + '" target="_blank" class="applicant-link">' + escHtml(r.name) + '</a>'
-      : escHtml(r.name);
-    var days = calcDays(r);
-    var daysStr = '';
-    if (days !== null) {
-      var cls = days <= 7 ? 'dur-green' : (days <= 14 ? 'dur-orange' : 'dur-red');
-      daysStr = '<span class="wbs-days ' + cls + '">' + days + '日</span>';
-    }
-    var dn = escHtml(r.name), dr = escHtml(r.role);
-    html += '<tr>';
-    html += '<td>' + nameCell + '</td>';
-    html += '<td>' + escHtml(r.role) + '</td>';
-    html += '<td><span class="status-badge" style="background:' + color + ';">' + escHtml(r.status || '未設定') + '</span></td>';
-    WBS_DATE_FIELDS.forEach(function(f) {
-      var val = r[f] || '';
-      var hasCls = val ? ' has-value' : '';
-      html += '<td><input type="date" value="' + val + '" class="' + hasCls + '" onchange="saveWbsDate(\'' + dn.replace(/'/g, "\\'") + '\',\'' + dr.replace(/'/g, "\\'") + '\',\'' + f + '\',this.value); this.className=this.value?\'has-value\':\'\'"></td>';
-    });
-    html += '<td>' + daysStr + '</td>';
-    html += '</tr>';
+  var currentVal = goal[field];
+  var input;
+  if (field === 'target') {
+    input = document.createElement('input');
+    input.type = 'number';
+    input.min = '1';
+    input.value = currentVal;
+  } else if (field === 'deadline') {
+    input = document.createElement('input');
+    input.type = 'date';
+    input.value = currentVal;
+  } else if (field === 'role') {
+    input = document.createElement('input');
+    input.type = 'text';
+    input.value = currentVal;
+    input.setAttribute('list', 'wbs-role-list');
   }
-  tbody.innerHTML = html;
-  document.getElementById('wbs-count').textContent = total + '件中 ' + (total > 0 ? start + 1 : 0) + '-' + end + '件表示';
 
-  // ページネーション
-  var pagEl = document.getElementById('wbs-pagination');
-  if (totalPages <= 1) { pagEl.innerHTML = ''; return; }
-  var ph = '';
-  ph += '<button class="page-btn" onclick="wbsGoPage(1)" ' + (wbsPage === 1 ? 'disabled' : '') + '>&laquo;</button>';
-  ph += '<button class="page-btn" onclick="wbsGoPage(' + (wbsPage - 1) + ')" ' + (wbsPage === 1 ? 'disabled' : '') + '>&lsaquo;</button>';
-  var sp = Math.max(1, wbsPage - 3), ep = Math.min(totalPages, sp + 6);
-  if (ep - sp < 6) sp = Math.max(1, ep - 6);
-  for (var p = sp; p <= ep; p++) {
-    ph += '<button class="page-btn' + (p === wbsPage ? ' active' : '') + '" onclick="wbsGoPage(' + p + ')">' + p + '</button>';
+  el.innerHTML = '';
+  el.style.border = 'none';
+  el.appendChild(input);
+  input.focus();
+  input.select();
+
+  function commit() {
+    var newVal = field === 'target' ? parseInt(input.value, 10) : input.value;
+    if (field === 'target' && (isNaN(newVal) || newVal < 1)) newVal = currentVal;
+    if (!newVal && field !== 'target') newVal = currentVal;
+    goal[field] = newVal;
+    saveWbsGoals(goals);
+    renderWbsGoals();
   }
-  ph += '<button class="page-btn" onclick="wbsGoPage(' + (wbsPage + 1) + ')" ' + (wbsPage === totalPages ? 'disabled' : '') + '>&rsaquo;</button>';
-  ph += '<button class="page-btn" onclick="wbsGoPage(' + totalPages + ')" ' + (wbsPage === totalPages ? 'disabled' : '') + '>&raquo;</button>';
-  pagEl.innerHTML = ph;
+
+  input.addEventListener('blur', commit);
+  input.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
+    if (e.key === 'Escape') { input.value = currentVal; input.blur(); }
+  });
 }
 
-function wbsGoPage(p) {
-  var totalPages = Math.max(1, Math.ceil(wbsFiltered.length / WBS_PAGE_SIZE));
-  if (p < 1 || p > totalPages) return;
-  wbsPage = p;
-  renderWbs();
-  document.getElementById('wbs-table').scrollIntoView({behavior: 'smooth', block: 'start'});
+function deleteWbsGoal(goalId) {
+  if (!confirm('この目標を削除しますか？')) return;
+  var goals = loadWbsGoals();
+  goals = goals.filter(function(g) { return g.id !== goalId; });
+  saveWbsGoals(goals);
+  renderWbsGoals();
+}
+
+function addWbsGoal() {
+  var roleInput = document.getElementById('wbs-new-role');
+  var targetInput = document.getElementById('wbs-new-target');
+  var deadlineInput = document.getElementById('wbs-new-deadline');
+
+  var role = roleInput.value.trim();
+  var target = parseInt(targetInput.value, 10);
+  var deadline = deadlineInput.value;
+
+  if (!role) { roleInput.focus(); return; }
+  if (isNaN(target) || target < 1) { targetInput.focus(); return; }
+  if (!deadline) { deadlineInput.focus(); return; }
+
+  var goals = loadWbsGoals();
+  var maxId = 0;
+  goals.forEach(function(g) { if (g.id > maxId) maxId = g.id; });
+  goals.push({ id: maxId + 1, role: role, target: target, deadline: deadline });
+  saveWbsGoals(goals);
+
+  roleInput.value = '';
+  targetInput.value = '1';
+  deadlineInput.value = '';
+
+  renderWbsGoals();
+}
+
+function renderWbsGoals() {
+  var goals = loadWbsGoals();
+  var totalGoals = goals.length;
+  var achievedCount = 0, onTrackCount = 0, atRiskCount = 0, behindCount = 0;
+
+  var rowsHtml = '';
+  for (var i = 0; i < goals.length; i++) {
+    var g = goals[i];
+    var hired = countHiredForRole(g.role);
+    var pct = g.target > 0 ? Math.min(Math.round((hired / g.target) * 100), 100) : 0;
+    var status = getGoalStatus(g, hired);
+    var daysLeft = getRemainingDays(g.deadline);
+
+    if (status.cls === 'achieved') achievedCount++;
+    else if (status.cls === 'on-track') onTrackCount++;
+    else if (status.cls === 'at-risk') atRiskCount++;
+    else if (status.cls === 'behind') behindCount++;
+
+    var daysClass = 'ok';
+    var daysText = daysLeft + '日';
+    if (daysLeft < 0) { daysClass = 'past'; daysText = Math.abs(daysLeft) + '日超過'; }
+    else if (daysLeft < 7) daysClass = 'danger';
+    else if (daysLeft <= 14) daysClass = 'warn';
+
+    var pctDisplay = g.target > 0 ? Math.round((hired / g.target) * 100) : 0;
+
+    rowsHtml += '<tr>';
+    rowsHtml += '<td><span class="editable-cell" onclick="startEditCell(' + g.id + ',\'role\',this)">' + escHtml(g.role) + '</span></td>';
+    rowsHtml += '<td><span class="editable-cell" onclick="startEditCell(' + g.id + ',\'target\',this)">' + g.target + '人</span></td>';
+    rowsHtml += '<td style="font-weight:700;color:var(--teal);">' + hired + '人</td>';
+    rowsHtml += '<td><div class="wbs-progress-bar"><div class="wbs-progress-fill ' + status.color + '" style="width:' + Math.max(pct, 8) + '%;">' + pctDisplay + '%</div></div></td>';
+    rowsHtml += '<td><span class="editable-cell" onclick="startEditCell(' + g.id + ',\'deadline\',this)">' + g.deadline + '</span></td>';
+    rowsHtml += '<td><span class="wbs-remaining ' + daysClass + '">' + daysText + '</span></td>';
+    rowsHtml += '<td><span class="wbs-status-badge ' + status.cls + '">' + status.label + '</span></td>';
+    rowsHtml += '<td><button class="wbs-delete-btn" onclick="deleteWbsGoal(' + g.id + ')">削除</button></td>';
+    rowsHtml += '</tr>';
+  }
+
+  document.getElementById('wbs-goal-tbody').innerHTML = rowsHtml;
+
+  // Summary cards
+  var summaryHtml = '';
+  summaryHtml += '<div class="summary-card"><div class="summary-num">' + totalGoals + '</div><div class="summary-label">目標数</div></div>';
+  summaryHtml += '<div class="summary-card card-green"><div class="summary-num">' + (achievedCount + onTrackCount) + '</div><div class="summary-label">順調・達成</div></div>';
+  summaryHtml += '<div class="summary-card card-coral"><div class="summary-num">' + atRiskCount + '</div><div class="summary-label">注意</div></div>';
+  summaryHtml += '<div class="summary-card" style="border-color:#ef4444;background:#fef2f2;"><div class="summary-num" style="color:#ef4444;">' + behindCount + '</div><div class="summary-label">遅延</div></div>';
+  document.getElementById('wbs-summary-cards').innerHTML = summaryHtml;
 }
 
 // 初期化
-loadWbsDates();
-initWbsFilters();
-updateWbsStats();
-renderWbs();
+initWbsRoleList();
+renderWbsGoals();
 
 </script>
 <script src="https://feedback-widget-inky-one.vercel.app/widget.js?v=2" data-project="recruit" data-host="https://feedback-widget-inky-one.vercel.app"></script>
