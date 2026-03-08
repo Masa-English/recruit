@@ -2138,6 +2138,9 @@ TOEIC810、講師経験7か月、全曜日勤務可(8:00...</span></td></tr></tb
               <th>役割</th>
               <th>目標人数</th>
               <th>採用済み</th>
+              <th>残り必要数</th>
+              <th>採用率</th>
+              <th>必要応募数</th>
               <th>進捗</th>
               <th>期限</th>
               <th>残り日数</th>
@@ -2504,6 +2507,18 @@ function countHiredForRole(roleName) {
   return count;
 }
 
+function getRoleStats(roleName) {
+  var totalApplicants = 0, hired = 0;
+  window.SEARCH_DATA.forEach(function(r) {
+    if (r.role === roleName) {
+      totalApplicants++;
+      if (HIRED_STATUSES.indexOf(r.status) >= 0) hired++;
+    }
+  });
+  var hiringRate = totalApplicants > 0 ? hired / totalApplicants : 0;
+  return { totalApplicants: totalApplicants, hired: hired, hiringRate: hiringRate };
+}
+
 function getGoalStatus(goal, hired) {
   var pct = goal.target > 0 ? (hired / goal.target) * 100 : 0;
   var today = new Date(); today.setHours(0,0,0,0);
@@ -2643,8 +2658,23 @@ function renderWbsGoals() {
 
     rowsHtml += '<tr>';
     rowsHtml += '<td><span class="editable-cell" onclick="startEditCell(' + g.id + ',\'role\',this)">' + escHtml(g.role) + '</span></td>';
+    var remaining = Math.max(0, g.target - hired);
+    var stats = getRoleStats(g.role);
+    var rateText = stats.totalApplicants > 0 ? (stats.hiringRate * 100).toFixed(1) + '%' : '-';
+    var neededApps = '-';
+    if (remaining > 0 && stats.hiringRate > 0) {
+      neededApps = '約' + Math.ceil(remaining / stats.hiringRate) + '件';
+    } else if (remaining > 0 && stats.hiringRate === 0 && stats.totalApplicants > 0) {
+      neededApps = '実績なし';
+    } else if (remaining <= 0) {
+      neededApps = '-';
+    }
+
     rowsHtml += '<td><span class="editable-cell" onclick="startEditCell(' + g.id + ',\'target\',this)">' + g.target + '人</span></td>';
     rowsHtml += '<td style="font-weight:700;color:var(--teal);">' + hired + '人</td>';
+    rowsHtml += '<td style="font-weight:700;color:' + (remaining > 0 ? '#ef4444' : '#16a34a') + ';">' + (remaining > 0 ? 'あと' + remaining + '人' : '達成') + '</td>';
+    rowsHtml += '<td>' + rateText + '</td>';
+    rowsHtml += '<td style="font-weight:600;color:#6366f1;">' + neededApps + '</td>';
     rowsHtml += '<td><div class="wbs-progress-bar"><div class="wbs-progress-fill ' + status.color + '" style="width:' + Math.max(pct, 8) + '%;">' + pctDisplay + '%</div></div></td>';
     rowsHtml += '<td><span class="editable-cell" onclick="startEditCell(' + g.id + ',\'deadline\',this)">' + g.deadline + '</span></td>';
     rowsHtml += '<td><span class="wbs-remaining ' + daysClass + '">' + daysText + '</span></td>';
@@ -2656,11 +2686,24 @@ function renderWbsGoals() {
   document.getElementById('wbs-goal-tbody').innerHTML = rowsHtml;
 
   // Summary cards
+  // 必要応募数の合計を計算
+  var totalNeededApps = 0;
+  for (var j = 0; j < goals.length; j++) {
+    var gj = goals[j];
+    var hj = countHiredForRole(gj.role);
+    var remj = Math.max(0, gj.target - hj);
+    if (remj > 0) {
+      var sj = getRoleStats(gj.role);
+      if (sj.hiringRate > 0) totalNeededApps += Math.ceil(remj / sj.hiringRate);
+    }
+  }
+
   var summaryHtml = '';
   summaryHtml += '<div class="summary-card"><div class="summary-num">' + totalGoals + '</div><div class="summary-label">目標数</div></div>';
   summaryHtml += '<div class="summary-card card-green"><div class="summary-num">' + (achievedCount + onTrackCount) + '</div><div class="summary-label">順調・達成</div></div>';
   summaryHtml += '<div class="summary-card card-coral"><div class="summary-num">' + atRiskCount + '</div><div class="summary-label">注意</div></div>';
   summaryHtml += '<div class="summary-card" style="border-color:#ef4444;background:#fef2f2;"><div class="summary-num" style="color:#ef4444;">' + behindCount + '</div><div class="summary-label">遅延</div></div>';
+  summaryHtml += '<div class="summary-card card-blue"><div class="summary-num">' + (totalNeededApps > 0 ? '約' + totalNeededApps + '件' : '-') + '</div><div class="summary-label">必要応募数合計</div></div>';
   document.getElementById('wbs-summary-cards').innerHTML = summaryHtml;
 }
 
