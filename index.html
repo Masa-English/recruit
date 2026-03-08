@@ -2481,13 +2481,8 @@ function loadWbsGoals() {
     var saved = localStorage.getItem(WBS_GOALS_KEY);
     if (saved) return JSON.parse(saved);
   } catch(e) {}
-  // デフォルト目標（予実管理タブと同じ）
-  return [
-    { id: 1, role: 'AM', target: 5, deadline: '2026-06-30' },
-    { id: 2, role: '事務', target: 3, deadline: '2026-06-30' },
-    { id: 3, role: '編集者', target: 2, deadline: '2026-06-30' },
-    { id: 4, role: '英会話講師', target: 20, deadline: '2026-06-30' }
-  ];
+  // デフォルトは空（ユーザーが自由に追加）
+  return [];
 }
 
 function saveWbsGoals(goals) {
