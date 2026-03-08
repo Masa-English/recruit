@@ -2130,6 +2130,7 @@ TOEIC810、講師経験7か月、全曜日勤務可(8:00...</span></td></tr></tb
   <div class="tab-content" data-tab="wbs">
     <section class="sec">
       <h2 class="sec-title">採用目標管理 (WBS)</h2>
+      <p style="font-size:12px;color:var(--gray);margin-bottom:12px;">採用率・必要応募数は過去の全応募データ（応募者数と採用数の比率）から自動算出しています。各セルにカーソルを合わせると詳細が表示されます。</p>
       <div class="summary-cards" id="wbs-summary-cards"></div>
       <div class="table-scroll">
         <table class="wbs-goal-table" id="wbs-goal-table">
@@ -2139,8 +2140,8 @@ TOEIC810、講師経験7か月、全曜日勤務可(8:00...</span></td></tr></tb
               <th>目標人数</th>
               <th>採用済み</th>
               <th>残り必要数</th>
-              <th>採用率</th>
-              <th>必要応募数</th>
+              <th title="過去の全応募者データから算出：その役割の採用数÷総応募数">採用率 <span style="cursor:help;color:var(--gray);font-size:11px;">&#9432;</span></th>
+              <th title="残り必要人数÷採用率で逆算。CWで集めるべき応募数の目安">必要応募数 <span style="cursor:help;color:var(--gray);font-size:11px;">&#9432;</span></th>
               <th>進捗</th>
               <th>期限</th>
               <th>残り日数</th>
@@ -2676,8 +2677,14 @@ function renderWbsGoals() {
     rowsHtml += '<td><span class="editable-cell" onclick="startEditCell(' + g.id + ',\'target\',this)">' + g.target + '人</span></td>';
     rowsHtml += '<td style="font-weight:700;color:var(--teal);">' + hired + '人</td>';
     rowsHtml += '<td style="font-weight:700;color:' + (remaining > 0 ? '#ef4444' : '#16a34a') + ';">' + (remaining > 0 ? 'あと' + remaining + '人' : '達成') + '</td>';
-    rowsHtml += '<td>' + rateText + '</td>';
-    rowsHtml += '<td style="font-weight:600;color:#6366f1;">' + neededApps + '</td>';
+    var rateTooltip = stats.totalApplicants > 0
+      ? '過去実績: 応募' + stats.totalApplicants + '名中 ' + stats.hired + '名採用'
+      : 'データなし';
+    var neededTooltip = remaining > 0 && stats.hiringRate > 0
+      ? 'あと' + remaining + '名 ÷ 採用率' + (stats.hiringRate * 100).toFixed(1) + '% = 約' + Math.ceil(remaining / stats.hiringRate) + '件の応募が必要'
+      : '';
+    rowsHtml += '<td title="' + escHtml(rateTooltip) + '" style="cursor:help;">' + rateText + '</td>';
+    rowsHtml += '<td title="' + escHtml(neededTooltip) + '" style="font-weight:600;color:#6366f1;cursor:help;">' + neededApps + '</td>';
     rowsHtml += '<td><div class="wbs-progress-bar"><div class="wbs-progress-fill ' + status.color + '" style="width:' + Math.max(pct, 8) + '%;">' + pctDisplay + '%</div></div></td>';
     rowsHtml += '<td><span class="editable-cell" onclick="startEditCell(' + g.id + ',\'deadline\',this)">' + g.deadline + '</span></td>';
     rowsHtml += '<td><span class="wbs-remaining ' + daysClass + '">' + daysText + '</span></td>';
